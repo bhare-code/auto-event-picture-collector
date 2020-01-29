@@ -1,3 +1,6 @@
+'''
+Main event server script
+'''
 import requests
 import pprint
 import os
