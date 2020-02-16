@@ -121,8 +121,8 @@ Execute the following commands to install the needed web application stack compo
     (sms) $ sudo apt upgrade
 
 NOTE: in many of the subsections below the first two commands from the list above are repeated.  This is not necessary.  They are included simply as a reminder that the commands are executed from within the virtual environment.
-### Test Nginx Web Server
-Navigate to the IP address of the Raspberry Pi from another device on the same LAN.  The default Nginx webpage should appear.  The text displayed will look similar to the following:
+### Test NGiNX Web Server
+Navigate to the IP address of the Raspberry Pi from another device on the same LAN.  The default NGiNX webpage should appear.  The text displayed will look similar to the following:
 
   ```
   Welcome to nginx!
@@ -147,3 +147,19 @@ Run the following commands to install uWSGI into the virtual environment:
     $ cd /var/www/sms/
     $ . bin/activate
     (sms) $ sudo bin/pip install uwsgi
+
+## Clone Source Code to Raspberry Pi
+Do the following to clone the source code onto the Raspberry Pi:
+
+    $ cd
+    $ git clone https://github.com/bhare-code/auto-event-picture-collector.git
+
+Enter your github credentials when prompted.
+### Configure Web server
+Do the following to configure the web server.  The default configuraiton for NGiNX
+
+    (sms) $ cd /etc/nginx/sites-enabled/
+    (sms) $ sudo rm default
+    (sms) $ cd /var/www/sms/
+    (sms) $ sudo cp ~/auto-event-picture-collector/sms_nginx.conf .
+    (sms) $ sudo ln -s /var/www/sms/lab_app_nginx.conf /etc/nginx/conf.d/
