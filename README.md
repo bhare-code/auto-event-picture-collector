@@ -156,10 +156,29 @@ Do the following to clone the source code onto the Raspberry Pi:
 
 Enter your github credentials when prompted.
 ### Configure Web server
-Do the following to configure the web server.  The default configuraiton for NGiNX
+Do the following to configure the web server.  Note that the default configuration for NGiNX is deleted.
 
+    $ cd /var/www/sms/
+    $ . bin/activate
     (sms) $ cd /etc/nginx/sites-enabled/
     (sms) $ sudo rm default
     (sms) $ cd /var/www/sms/
     (sms) $ sudo cp ~/auto-event-picture-collector/sms_nginx.conf .
-    (sms) $ sudo ln -s /var/www/sms/lab_app_nginx.conf /etc/nginx/conf.d/
+    (sms) $ sudo ln -s /var/www/sms/sms_nginx.conf /etc/nginx/conf.d/
+    (sms) $ sudo cp ~/auto-event-picture-collector/sms_uwsgi.ini .
+    (sms) $ sudo mkdir /var/log/uwsgi
+
+### Test Web Server Configuration
+Do the following to test the web server configuration.  The test_server_config.py file is a very simple stripped-down Flask application.
+
+    $ cd /var/www/sms/
+    $ . bin/activate
+    (sms) $ sudo cp ~/auto-event-picture-collector/test_server_config.py sms.py
+    (sms) $ sudo /etc/init.d/nginx restart
+    (sms) $ sudo bin/uwsgi --ini /var/www/sms/sms_uwsgi.ini
+
+Navigate to the IP address of the Raspberry Pi from another device on the same LAN.  The test webpage should appear.  The text displayed will be as follows:
+
+```
+Hello from my web server!
+```
