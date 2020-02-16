@@ -3,7 +3,7 @@ Description=uWSGI Emperor
 After=syslog.target
 
 [Service]
-ExecStart=/var/www/lab_app/bin/uwsgi --ini /var/www/lab_app/lab_app_uwsgi.ini
+ExecStart=/var/www/sms/bin/uwsgi --ini /var/www/sms/sms_uwsgi.ini
 # Requires systemd version 211 or newer
 RuntimeDirectory=uwsgi
 Restart=always
