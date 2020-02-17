@@ -182,3 +182,132 @@ Navigate to the IP address of the Raspberry Pi from another device on the same L
 ```
 Hello from my web server!
 ```
+## Persist Web Server
+Do the following to make the web server initialization persistent:
+
+    (sms) $ sudo cp ~/auto-event-picture-collector/emperor.uwsgi.service /etc/systemd/system/
+    (sms) $ sudo chmod +x /etc/systemd/system/emperor.uwsgi.service
+    (sms) $ sudo systemctl start emperor.uwsgi.service
+
+Verify that the service is running:
+
+    (sms) $ systemctl status emperor.uwsgi.service
+
+Enable the service to run at bootup:
+
+    (sms) $ sudo systemctl enable emperor.uwsgi.service
+
+### Test Web Server Persistence
+Reboot the Raspberry Pi using `sudo reboot now` then navigate to the IP address of the Raspberry Pi from another device on the same LAN.  The test webpage should appear like it did before.  The text displayed will be as follows:
+
+```
+Hello from my web server!
+```
+## Install and Setup Twilio
+Do the following to install the Twilio Python package into the virtual environment:
+
+    $ cd /var/www/sms/
+    $ . bin/activate
+    (sms) $ sudo bin/pip install twilio
+
+### Install Twilio CLI
+References:
+- [Twilio Quickstart Pyton](https://www.twilio.com/docs/sms/quickstart/python)
+- [NVM Installation and Update](https://github.com/nvm-sh/nvm#installation-and-update)
+- [Nodejs Upgrade](https://thisdavej.com/upgrading-to-more-recent-versions-of-node-js-on-the-raspberry-pi/)
+
+Do the following to install the Twilio CLI:
+
+    $ cd
+    $ sudo apt update
+    $ curl -sL https://deb.nodesource.com/setup_13.x | sudo -E bash -
+    $ sudo apt install -y nodejs
+    $ node -v
+    $ curl -o- https://raw.githubusercontent.com/nvm-sh/nvm/v0.35.1/install.sh | bash
+    $ sudo apt autoremove
+    $ sudo reboot now
+    ...
+    $ nvm install --lts
+    $ nvm use <version reported from last command>
+    Example: $ nvm use v12.16.0
+    $ sudo apt install libsecret-1-dev
+    $ sudo apt install gnome-keyring
+    $ npm install twilio-cli -g
+    $ npm install twilio-cli@latest -g
+
+### Setup Twilio Account
+References:
+- [Twilio](https://www.twilio.com/)
+
+Use the link above to access the Twilio website.  Create an account and request a free phone number that is capable of SMS and MMS.  You can always upgrade later if you want by purchasing the phone number.
+
+### Add Environment Variables to .bashrc File
+Do the following to setup all Twilio -related environment variables that will be needed by the web application:
+
+    $ cd
+    $ <edit> .bashrc
+    Example1: vi .bashrc
+    Example2: nano .bashrc
+
+If you're not familiar with the VI/VIM editor then I suggest that you use Nano.
+
+Add the following to the bottom of the .bashrc file.  The account SID and auth token are available via the Dashboard on Twilio.  The API key is available after you generate a Python project in Twilio.  Go to Settings --> API Keys.
+
+The `MY_PHONE_NUMBER` environment variable must be set to the phone number of a phone that you have in your possession and **verified** through Twilio.
+
+    export TWILIO_ACCOUNT_SID=<account SID from Twilio, no quotes>
+    export TWILIO_AUTH_TOKEN=<auth token from Twilio, no quotes>
+    export TWILIO_API_KEY=<generated API key SID from Twilio, no quotes>
+    export TWILIO_API_SECRET=<generated API secret from Twilio, no quotes>
+    export TWILIO_PHONE_NUMBER=<Twilio phone number, e.g. +14045551212, no quotes>
+    export MY_PHONE_NUMBER=<Personal phone number, e.g. +14045551212, no quotes>
+
+Example:
+
+    export TWILIO_ACCOUNT_SID=AC11223344556677889900aabbccddeeff
+    export TWILIO_AUTH_TOKEN=01234567890abcdef01234567890abcdef
+    export TWILIO_API_KEY=SK01234567890abcdef1122334455667788
+    export TWILIO_API_SECRET=AbccdEFghijkl0123456789MNOpqrstu
+    export TWILIO_PHONE_NUMBER=+14045551212
+    export MY_PHONE_NUMBER=+17705551212
+
+Save the file then run the following command to apply the changes:
+
+    $ source .bashrc
+
+### Twilio CLI configuration
+Do the following to enable Twilio CLI command autocompletion:
+
+    $ cd
+    $ twilio autocomplete bash
+    $ printf "$(twilio autocomplete:script bash)" >> ~/.bashrc; source ~/.bashrc
+
+### Test SMS Messaging
+References:
+- [Twilio SMS Python Quickstart](https://www.twilio.com/docs/sms/quickstart/python)
+
+Do the following to test the ability to send a test message from the Raspberry Pi.  Refer to the above reference for additional details on sending and receiving SMS messages using Twilio.
+
+    $ cd /var/www/sms/
+    $ . bin/activate
+    (sms) $ sudo cp ~/auto-event-picture-collector/send_sms.py .
+    (sms) $ python send_sms.py
+
+A text message will be sent to the phone number configured as `MY_PHONE_NUMBER` above.
+
+Do the following to setup a simple Flask app to receive text messages:
+
+    $ cd /var/www/sms/
+    $ . bin/activate
+    (sms) $ sudo cp ~/auto-event-picture-collector/receive_sms.py .
+    (sms) $ python receive_sms.py
+
+Open a 2nd SSH (or Terminal) session and do the following.  This will setup an ngrok session automatically and register it with Twilio.
+
+    $ twilio phone-numbers:update "<Twilio phone number>" --sms-url=http://localhost:5000/sms
+
+Example:
+
+    $ twilio phone-numbers:update "+17705551212" --sms-url=http://localhost:5000/sms
+
+Using the phone configured as `MY_PHONE_NUMBER` send a text message to your Twilio phone number.
