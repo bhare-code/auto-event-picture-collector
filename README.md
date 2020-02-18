@@ -183,10 +183,9 @@ Navigate to the IP address of the Raspberry Pi from another device on the same L
 Hello from my web server!
 ```
 ## Persist Web Server
-Do the following to make the web server initialization persistent:
+Make the web server initialization persistent:
 
     (sms) $ sudo cp ~/auto-event-picture-collector/emperor.uwsgi.service /etc/systemd/system/
-    (sms) $ sudo chmod +x /etc/systemd/system/emperor.uwsgi.service
     (sms) $ sudo systemctl start emperor.uwsgi.service
 
 Verify that the service is running:
@@ -302,7 +301,7 @@ Do the following to setup a simple Flask app to receive text messages:
     (sms) $ sudo cp ~/auto-event-picture-collector/receive_sms.py .
     (sms) $ python receive_sms.py
 
-Open a 2nd SSH (or Terminal) session and do the following.  This will setup an ngrok session automatically and register it with Twilio.
+Open a 2nd SSH (or Terminal) session and do the following.  This will setup an ngrok session automatically and register it with Twilio.  The ngrok session will work for only eight hours for free.  A paid account is necessary to maintain  session indefinitely.
 
     $ twilio phone-numbers:update "<Twilio phone number>" --sms-url=http://localhost:5000/sms
 
@@ -310,4 +309,130 @@ Example:
 
     $ twilio phone-numbers:update "+17705551212" --sms-url=http://localhost:5000/sms
 
-Using the phone configured as `MY_PHONE_NUMBER` send a text message to your Twilio phone number.
+Using the phone configured as `MY_PHONE_NUMBER` send a text message to your Twilio phone number.  You will receive a response text message if everything is setup correctly.
+
+### Test SMS Messaging via Full Web Application Stack
+Do the following to test SMS messaging through the full web application stack setup previously:
+
+    $ cd /var/www/sms/
+    $ . bin/activate
+    (sms) $ sudo mv receive_sms.py sms.py
+    (sms) $ sudo systemctl restart emperor.uwsgi.service
+
+Setup an ngrok session using the Twilio CLI.  Note the change in local port from 5000 to 80.
+
+    $ twilio phone-numbers:update "<Twilio phone number" --sms-url=http://localhost:80/sms
+
+Using the phone configured as `MY_PHONE_NUMBER` send a text message to your Twilio phone number.  You should receive a response text message like before.
+
+NOTE: a default route is also setup in the test receive_sms.py script which means that you can still access the local web server from another device on the LAN by navigating to the local IP address of the Reaspberry Pi from a web browser.
+
+## Setup Event Server
+Setup the event server to collect pictures now that both the persistent full stack web application and Twilio are working.
+
+    $ sudo cp ~/auto-event-picture-collector/event_server.py /var/www/sms/sms.py
+    $ sudo systemctl stop emperor.uwsgi.service
+    $ sudo systemctl edit emperor.uwsgi.service
+
+Add the following to the `override.conf` file that will be created in the `/etc/systemd/system/emperor.uwsgi.service.d
+` directory:
+
+    [Service]
+    Environment="TWILIO_ACCOUNT_SID=<account SID from Twilio>"
+    Environment="TWILIO_AUTH_TOKEN=<auth token from Twilio>"
+    Environment="TWILIO_API_KEY=<generated API key SID from Twilio>"
+    Environment="TWILIO_API_SECRET=<generated API secret from Twilio>"
+    Environment="TWILIO_PHONE_NUMBER=<Twilio phone number, e.g. +14045551212>"
+    Environment="MY_PHONE_NUMBER=<Personal phone number, e.g. +14045551212>"
+
+Example:
+
+    [Service]
+    Environment="TWILIO_ACCOUNT_SID=AC11223344556677889900aabbccddeeff"
+    Environment="TWILIO_AUTH_TOKEN=01234567890abcdef01234567890abcdef"
+    Environment="TWILIO_API_KEY=SK01234567890abcdef1122334455667788"
+    Environment="TWILIO_API_SECRET=AbccdEFghijkl0123456789MNOpqrstu"
+    Environment="TWILIO_PHONE_NUMBER=+14045551212"
+    Environment="MY_PHONE_NUMBER=+17705551212"
+
+Reload and Restart uWSGI:
+
+    $ sudo systemctl start emperor.uwsgi.service
+    $ sudo systemctl daemon-reload
+    $ sudo systemctl restart emperor.uwsgi.service
+
+Setup ngrok:
+
+    $ twilio phone-numbers:update "<Twilio phone number" --sms-url=http://localhost:80/sms
+
+## Persist Twilio Webhook
+Make the Twilio webhook initialization persistent:
+
+    $ sudo cp ~/auto-event-picture-collector/twilio.webhook.service /lib/systemd/system/
+    $ cp ~/auto-event-picture-collector/twilio_webhook_init.py /home/pi/
+    $ sudo systemctl start twilio.webhook.service
+
+Verify that the service is running:
+
+    (sms) $ systemctl status twilio.webhook.service
+
+Enable the service to run at bootup:
+
+    (sms) $ sudo systemctl enable twilio.webhook.service
+
+Setup environment variable.
+
+    $ sudo systemctl stop twilio.webhook.service
+    $ sudo systemctl edit twilio.webhook.service
+
+Add the following to the `override.conf` file that will be created in the `/etc/systemd/system/twilio.webhook.service.d` directory:
+
+    [Service]
+    Environment="TWILIO_ACCOUNT_SID=<account SID from Twilio>"
+    Environment="TWILIO_AUTH_TOKEN=<auth token from Twilio>"
+    Environment="TWILIO_API_KEY=<generated API key SID from Twilio>"
+    Environment="TWILIO_API_SECRET=<generated API secret from Twilio>"
+    Environment="TWILIO_PHONE_NUMBER=<Twilio phone number, e.g. +14045551212>"
+    Environment="MY_PHONE_NUMBER=<Personal phone number, e.g. +14045551212>"
+
+Example:
+
+    [Service]
+    Environment="TWILIO_ACCOUNT_SID=AC11223344556677889900aabbccddeeff"
+    Environment="TWILIO_AUTH_TOKEN=01234567890abcdef01234567890abcdef"
+    Environment="TWILIO_API_KEY=SK01234567890abcdef1122334455667788"
+    Environment="TWILIO_API_SECRET=AbccdEFghijkl0123456789MNOpqrstu"
+    Environment="TWILIO_PHONE_NUMBER=+14045551212"
+    Environment="MY_PHONE_NUMBER=+17705551212"
+
+Reload and Restart uWSGI:
+
+    $ sudo systemctl start emperor.uwsgi.service
+    $ sudo systemctl daemon-reload
+    $ sudo systemctl restart emperor.uwsgi.service
+
+### Test Web Server Persistence
+Reboot the Raspberry Pi using `sudo reboot now` then check the status of the twilio.webhook.service.
+
+    $ sudo systemctl status emperor.uwsgi.service
+
+Next, send a text message with contents of "status" from the phone verified by Twilio to your Twilio phone number.  Verify that a response is received.
+
+## Setup Slideshow Application
+### Install Tkinter
+Do the following to install Tkinter.  Modify the Python version number below as needed.  Note that the Python3 installation is also updated to pull in the needed libraries.
+
+    $ cd
+    $ sudo apt update
+    $ sudo apt install tk
+    $ sudo apt install tk-dev
+    $ cd python-source/Python-3.8.1/
+    $ ./configure --prefix=/usr/local/opt/python-3.8.1
+    $ make
+    $ sudo make install
+
+### Install Pillow
+
+    $ cd /var/www/sms/
+    $ . bin/activate
+    (sms) $ sudo bin/pip install pillow
