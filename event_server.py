@@ -9,6 +9,7 @@ from twilio.twiml.messaging_response import MessagingResponse
 
 
 DOWNLOAD_DIRECTORY = '/home/pi/Pictures'
+PHOTO_EXTS = ('.jpg', '.jpeg', '.bmp', '.png')
 MY_PERSONAL_PHONE_NUMBER = os.environ["MY_PHONE_NUMBER"]
 
 # Incoming message fields
@@ -95,6 +96,11 @@ Example text message received with two pictures and text:
 '''
 
 
+@app.route("/")
+def hello():
+    return "Hello again from my web server!"
+
+
 @app.route("/sms", methods=['GET', 'POST'])
 def sms_reply():
     """Respond to incoming with a simple text message."""
@@ -122,12 +128,17 @@ def sms_reply():
 
             # Use the message SID as the base for the filename
             # and the image type as extension
+            tmp_filename = request.values[SMS_MSG_SID] + '_' + str(idx) + '.tmp'
             filename = request.values[SMS_MSG_SID] + '_' + str(idx) + ext
 
-            # TODO: don't overwrite the file if it already exists
-            with open('{}/{}'.format(DOWNLOAD_DIRECTORY, filename), 'wb') as f:
+            # Save the image to a temporary file while it's downloading.
+            with open(os.path.join(DOWNLOAD_DIRECTORY, tmp_filename), 'wb') as f:
                image_url = request.values[SMS_MEDIA_URL_BASE + str(idx)]
                f.write(requests.get(image_url).content)
+
+            # Go ahead and make the image available now that's it's downloaded.
+            os.rename(os.path.join(DOWNLOAD_DIRECTORY, tmp_filename),
+                      os.path.join(DOWNLOAD_DIRECTORY, filename))
 
         if num_pics > 1:
             resp.message("Thanks for the images!")
@@ -149,6 +160,13 @@ def sms_reply():
             if debug_app:
                 print('Pausing currently displayed picture...')
             # TODO - pause the currently displayed picture
+        elif command == 'status':
+            num_pics = len([file for file in os.listdir(DOWNLOAD_DIRECTORY) if file.endswith(PHOTO_EXTS)])
+
+            if (num_pics == 1):
+                resp.message(f'There is only {num_pics} photo')
+            else:
+                resp.message(f'There are {num_pics} photos')
         else:
             # TODO - add more commands
             if debug_app:

@@ -370,15 +370,15 @@ Make the Twilio webhook initialization persistent:
 
     $ sudo cp ~/auto-event-picture-collector/twilio.webhook.service /lib/systemd/system/
     $ cp ~/auto-event-picture-collector/twilio_webhook_init.py /home/pi/
+
+Edit the `twilio_webhook_init.py` file if necessary to modify the version number for nodejs, then start and verify the service.
+
     $ sudo systemctl start twilio.webhook.service
-
-Verify that the service is running:
-
-    (sms) $ systemctl status twilio.webhook.service
+    $ systemctl status twilio.webhook.service
 
 Enable the service to run at bootup:
 
-    (sms) $ sudo systemctl enable twilio.webhook.service
+    $ sudo systemctl enable twilio.webhook.service
 
 Setup environment variable.
 
@@ -436,3 +436,20 @@ Do the following to install Tkinter.  Modify the Python version number below as 
     $ cd /var/www/sms/
     $ . bin/activate
     (sms) $ sudo bin/pip install pillow
+
+### Install Slideshow Application
+TBD
+## Disable Raspberry Pi Screensaver
+Disable the screensaver on the Raspberry Pi to avoid having the screen go blank while displaying captured pictures:
+
+Edit the `/etc/xdg/lxsession/LXDE-pi/autostart` file.
+
+To disable the screensaver on a Raspberry Pi 3B+ or earlier add the following commands to the `autostart` file:
+
+    @xset s off
+    @xset -dpms
+
+To disable the screensaver on a Raspberry Pi 4B or (possibly) later add the following commands to the `autostart` file:
+
+    @xset s off
+    @xset dpms 0 0 0
