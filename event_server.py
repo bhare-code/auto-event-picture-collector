@@ -162,11 +162,12 @@ def sms_reply():
             # TODO - pause the currently displayed picture
         elif command == 'status':
             num_pics = len([file for file in os.listdir(DOWNLOAD_DIRECTORY) if file.endswith(PHOTO_EXTS)])
+            usage_stats = os.statvfs(DOWNLOAD_DIRECTORY + "/")
+            disk_usage = usage_stats.f_bavail * usage_stats.f_frsize
+            disk_usage /= 1024**3
 
-            if (num_pics == 1):
-                resp.message(f'There is only {num_pics} photo')
-            else:
-                resp.message(f'There are {num_pics} photos')
+            resp.message(f'Pics: {num_pics}\nDisk space: {disk_avail:.2f}GB')
+
         else:
             # TODO - add more commands
             if debug_app:
