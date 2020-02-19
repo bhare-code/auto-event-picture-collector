@@ -444,12 +444,8 @@ Disable the screensaver on the Raspberry Pi to avoid having the screen go blank 
 
 Edit the `/etc/xdg/lxsession/LXDE-pi/autostart` file.
 
-To disable the screensaver on a Raspberry Pi 3B+ or earlier add the following commands to the `autostart` file:
+To disable the screensaver do the following:
 
-    @xset s off
-    @xset -dpms
+    $ sudo raspi-config
 
-To disable the screensaver on a Raspberry Pi 4B or (possibly) later add the following commands to the `autostart` file:
-
-    @xset s off
-    @xset dpms 0 0 0
+Select "Advanced Options" then select "Screen Blanking" and follow the instructions to disable screen blanking and allow the Raspberry Pi to be reset.
