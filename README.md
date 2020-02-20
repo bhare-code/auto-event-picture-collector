@@ -327,6 +327,37 @@ Using the phone configured as `MY_PHONE_NUMBER` send a text message to your Twil
 
 NOTE: a default route is also setup in the test receive_sms.py script which means that you can still access the local web server from another device on the LAN by navigating to the local IP address of the Reaspberry Pi from a web browser.
 
+## Setup RAM Drive
+The RAM drive is used for communication between Python scripts without writing to the microSD card.
+
+    $ sudo mkdir /var/tmp2
+    $ sudo vi /etc/fstab
+
+Add the following line:
+
+    tmpfs /var/tmp2 tmpfs nodev,nosuid,size=30M 0 0
+
+Mount the drive:
+
+    $ sudo mount -a
+
+Verify tht the drive is mounted:
+
+    $ df -h
+
+If mounted then the drive will appear as shown below.  See last line.
+
+    Filesystem      Size  Used Avail Use% Mounted on
+    /dev/root        15G  7.4G  6.3G  55% /
+    devtmpfs        459M     0  459M   0% /dev
+    tmpfs           464M     0  464M   0% /dev/shm
+    tmpfs           464M  6.4M  457M   2% /run
+    tmpfs           5.0M  4.0K  5.0M   1% /run/lock
+    tmpfs           464M     0  464M   0% /sys/fs/cgroup
+    /dev/mmcblk0p1  253M   53M  200M  21% /boot
+    tmpfs            93M     0   93M   0% /run/user/1000
+    tmpfs            30M     0   30M   0% /var/tmp2
+
 ## Setup Event Server
 Setup the event server to collect pictures now that both the persistent full stack web application and Twilio are working.
 

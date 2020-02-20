@@ -4,12 +4,14 @@ Main event server script
 import requests
 import pprint
 import os
+import subprocess
 from flask import Flask, request, redirect
 from twilio.twiml.messaging_response import MessagingResponse
 
 
 DOWNLOAD_DIRECTORY = '/home/pi/Pictures'
 PHOTO_EXTS = ('.jpg', '.jpeg', '.bmp', '.png')
+VIDEO_EXTS = ('.3gpp', '.mov', '.m4v')
 MY_PERSONAL_PHONE_NUMBER = os.environ["MY_PHONE_NUMBER"]
 
 # Incoming message fields
@@ -96,6 +98,35 @@ Example text message received with two pictures and text:
 '''
 
 
+def get_disk_space_used_str(files):
+    files_disk_space = 0
+    files_disk_space_str = '0'
+
+    if not files:
+        return files_disk_space_str
+
+    for file in files:
+        files_disk_space += os.path.getsize(os.path.join(DOWNLOAD_DIRECTORY, file))
+
+    # Convert to KB
+    files_disk_space /= 1024
+
+    if files_disk_space < 1000:
+        files_disk_space_str = f'{files_disk_space:.2f}KB'
+    else:
+        # Convert to MB
+        files_disk_space /=1024
+
+        if files_disk_space < 1000:
+            files_disk_space_str = f'{files_disk_space:.2f}MB'
+        else:
+            # Convert to GB
+            files_disk_space /=1024
+            files_disk_space_str = f'{files_disk_space:.2f}GB'
+
+    return files_disk_space_str
+
+
 @app.route("/")
 def hello():
     return "Hello again from my web server!"
@@ -152,22 +183,45 @@ def sms_reply():
             print('Received a command from the admin operator!!!')
         command = request.values[SMS_BODY].lower().strip()
 
-        if command == 'drop':
+        if command == 'commands':
+            resp_msg_str = ''
+            resp_msg_str += 'status: get status\n'
+            resp_msg_str += 'reboot: reboot device\n'
+            resp_msg_str += 'trash: move current pic to trash\n'
+            resp.message(resp_msg_str)
+        if command == 'reboot':
+            subprocess.call('sudo reboot now', shell=True)
+        if command == 'drop' or command == 'trash':
             if debug_app:
                 print('Moving picture to trash...')
-            # TODO - move picture to trash folder
+
+            subprocess.call('touch /var/tmp2/trash_pic', shell=True)
+            resp.message('Picture moved to trash')
         elif command == 'pause':
             if debug_app:
                 print('Pausing currently displayed picture...')
             # TODO - pause the currently displayed picture
         elif command == 'status':
-            num_pics = len([file for file in os.listdir(DOWNLOAD_DIRECTORY) if file.endswith(PHOTO_EXTS)])
+            resp_msg_str = ''
+
+            pics = [file for file in os.listdir(DOWNLOAD_DIRECTORY) if file.endswith(PHOTO_EXTS)]
+            num_pics = len(pics)
+            pics_disk_space_str = get_disk_space_used_str(pics)
+
+            vids = [file for file in os.listdir(DOWNLOAD_DIRECTORY) if file.endswith(VIDEO_EXTS)]
+            num_vids = len(vids)
+            vids_disk_space_str = get_disk_space_used_str(vids)
+
             usage_stats = os.statvfs(DOWNLOAD_DIRECTORY + "/")
-            disk_usage = usage_stats.f_bavail * usage_stats.f_frsize
-            disk_usage /= 1024**3
+            space_avail = usage_stats.f_bavail * usage_stats.f_frsize
+            space_avail /= 1024**3
 
-            resp.message(f'Pics: {num_pics}\nDisk space: {disk_avail:.2f}GB')
-
+            resp_msg_str += f'Pics: {num_pics}\n'
+            resp_msg_str += f'Videos: {num_vids}\n'
+            resp_msg_str += f'Disk space avail: {space_avail:.2f}GB\n'
+            resp_msg_str += f'Disk space used (pics): {pics_disk_space_str}\n'
+            resp_msg_str += f'Disk space used (vids): {vids_disk_space_str}\n'
+            resp.message(resp_msg_str)
         else:
             # TODO - add more commands
             if debug_app:
