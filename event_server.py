@@ -10,13 +10,21 @@ from twilio.twiml.messaging_response import MessagingResponse
 
 
 DOWNLOAD_DIRECTORY = '/home/pi/Pictures'
+COMMAND_DIRECTORY = '/var/tmp2'
 TRASH_DIRECTORY = '/home/pi/Pictures/trash'
-USB_DIRECTORY = '/media/pi'
+MEDIA_DIRECTORY = '/media/pi'
 CURRENT_WIFI_CONFIG_FILE = '/etc/wpa_supplicant/wpa_supplicant.conf'
 NEW_WIFI_CONFIG_FILE = '/home/pi/wifi_files/wpa_supplicant.conf.event'
 PHOTO_EXTS = ('.jpg', '.jpeg', '.bmp', '.png')
 VIDEO_EXTS = ('.3gpp', '.mov', '.m4v')
 MY_PERSONAL_PHONE_NUMBER = os.environ["MY_PHONE_NUMBER"]
+
+# Command files
+FILE_BACKUP_PICS = 'backup_pics'
+FILE_BACKUP_COMPLETE = 'backup_complete'
+FILE_PAUSE_PIC = 'pause_pic'
+FILE_RESUME_PIC = 'resume_pic'
+FILE_TRASH_PIC = 'trash_pic'
 
 # Global state info
 # Wi-Fi setup state transitions
@@ -37,7 +45,7 @@ SMS_MEDIA_TYPE_BASE = 'MediaContentType'
 SMS_MEDIA_URL_BASE = 'MediaUrl'
 
 app = Flask(__name__)
-debug_app = True
+debug_app = False
 pretty_print = False
 
 '''
@@ -112,6 +120,22 @@ Example text message received with two pictures and text:
 '''
 
 
+def get_usb_dir(usb_dir):
+    usb_location = None
+
+    if not usb_dir:
+        return usb_location
+
+    dir_items = os.listdir(usb_dir)
+
+    for item in dir_items:
+        if os.path.isdir(os.path.join(usb_dir, item)):
+            usb_location = os.path.join(usb_dir, item)
+            break
+
+    return usb_location
+
+
 def get_disk_space_used_str(files, directory, trash_files, trash_directory):
     files_disk_space = 0
     files_disk_space_str = '0'
@@ -142,6 +166,18 @@ def get_disk_space_used_str(files, directory, trash_files, trash_directory):
             files_disk_space_str = f'{files_disk_space:.2f}GB'
 
     return files_disk_space_str
+
+
+def get_usb_stats(directory):
+    if not directory:
+        return 0, 0, 0
+
+    usb_stats = os.statvfs(directory)
+    total = (usb_stats.f_bsize * usb_stats.f_blocks) / 1024**3
+    used = (usb_stats.f_bsize * (usb_stats.f_blocks - usb_stats.f_bfree)) / 1024**3
+    avail = (usb_stats.f_bsize * usb_stats.f_bfree) / 1024**3
+
+    return total, used, avail
 
 
 @app.route("/")
@@ -259,50 +295,68 @@ def sms_reply():
             resp_msg_str += 'pause/resume: pause/resume pic display\n'
             resp_msg_str += 'ip: get IP addresses\n'
             resp_msg_str += 'reboot: reboot device\n'
+            resp_msg_str += 'shutdown: shutdown device\n'
             resp_msg_str += 'trash: move current pic to trash\n'
             resp_msg_str += 'wifi: setup Wi-Fi creds\n'
             resp_msg_str += 'backup: backup pics to USB\n'
+            resp_msg_str += 'usb: get stats on thumb drive\n'
+            resp_msg_str += 'update: update Twilio webhook\n'
             resp.message(resp_msg_str)
         elif command == 'wifi':
             wifi_setup_state = WIFI_STATE_SSID
             resp.message("Network name?")
+        elif command == 'usb':
+            usb_loc = get_usb_dir(MEDIA_DIRECTORY)
+
+            if usb_loc:
+                total, used, avail = get_usb_stats(usb_loc)
+                resp_msg_str = f'Total: {total:.2f}GB\n'
+                resp_msg_str += f'Used: {used:.2f}GB\n'
+                resp_msg_str += f'Available: {avail:.2f}GB\n'
+                resp.message(resp_msg_str)
+            else:
+                resp.message('No USB attached!')
         elif command == 'backup':
             # Copy all pictures to attached USB
-            dir_items = os.listdir(USB_DIRECTORY)
-            found_usb = False
-
-            for item in dir_items:
-                if os.path.isdir(os.path.join(USB_DIRECTORY, item)):
-                    found_usb = True
-                    break
-
-            if found_usb:
-                subprocess.call('touch /var/tmp2/backup_pics', shell=True)
-                resp.message('Backing up pics to USB drive.  When picture display changes USB is ready...')
+            if get_usb_dir(MEDIA_DIRECTORY):
+                cmd = f'touch {os.path.join(COMMAND_DIRECTORY, FILE_BACKUP_PICS)}'
+                subprocess.call(cmd, shell=True)
+                resp.message('Backing up pics to USB drive.  Use status command to check backup status...')
             else:
                 resp.message('No USB attached!')
         elif command == 'ip':
             ip_address = subprocess.check_output("hostname -I", shell=True).decode('utf-8').replace(' ', '\n')
             resp.message(ip_address)
+        elif command == 'update':
+            # Update Twilio webhook
+            subprocess.call('sudo /home/pi/twilio_control.sh restart', shell=True)
+
+            # Likely will not get response message due to webhook restart
+            resp.message('Twilio primary webhook updated')
         elif command == 'reboot':
             subprocess.call('sudo reboot now', shell=True)
+        elif command == 'shutdown':
+            subprocess.call('sudo shutdown now', shell=True)
         elif command == 'pause':
             if debug_app:
                 print('Pausing picture display...')
 
-            subprocess.call('touch /var/tmp2/pause_pic', shell=True)
+            cmd = f'touch {os.path.join(COMMAND_DIRECTORY, FILE_PAUSE_PIC)}'
+            subprocess.call(cmd, shell=True)
             resp.message('Picture display paused')
         elif command == 'resume':
             if debug_app:
                 print('Resuming picture display...')
 
-            subprocess.call('touch /var/tmp2/resume_pic', shell=True)
+            cmd = f'touch {os.path.join(COMMAND_DIRECTORY, FILE_RESUME_PIC)}'
+            subprocess.call(cmd, shell=True)
             resp.message('Picture display resumed')
         elif command == 'drop' or command == 'trash':
             if debug_app:
                 print('Moving picture to trash...')
 
-            subprocess.call('touch /var/tmp2/trash_pic', shell=True)
+            cmd = f'touch {os.path.join(COMMAND_DIRECTORY, FILE_TRASH_PIC)}'
+            subprocess.call(cmd, shell=True)
             resp.message('Picture moved to trash')
         elif command == 'status':
             resp_msg_str = ''
@@ -323,14 +377,26 @@ def sms_reply():
             space_avail = usage_stats.f_bavail * usage_stats.f_frsize
             space_avail /= 1024**3
 
+            if os.path.exists(os.path.join(COMMAND_DIRECTORY, FILE_BACKUP_PICS)):
+                backup_status = 'Backing up pics to USB...'
+            elif os.path.exists(os.path.join(COMMAND_DIRECTORY, FILE_BACKUP_COMPLETE)):
+                cmd = f'sudo rm {os.path.join(COMMAND_DIRECTORY, FILE_BACKUP_COMPLETE)}'
+                subprocess.call(cmd, shell=True)
+                backup_status = 'Backup to USB complete!'
+            else:
+                backup_status = ''
+
             resp_msg_str += f'Pics: {num_pics}\n'
             resp_msg_str += f'Videos: {num_vids}\n'
             resp_msg_str += f'Disk space avail: {space_avail:.2f}GB\n'
             resp_msg_str += f'Disk space used (pics): {pics_disk_space_str}\n'
             resp_msg_str += f'Disk space used (vids): {vids_disk_space_str}\n'
+
+            if backup_status:
+                resp_msg_str += f'{backup_status}\n'
+
             resp.message(resp_msg_str)
         else:
-            # TODO - add more commands
             if debug_app:
                 print(f'Unknown command: "{command}"')
                 pprint.pprint(request.values)
