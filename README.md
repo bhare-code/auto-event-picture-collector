@@ -73,7 +73,7 @@ Do the following to get the URL to the latest stable Python3 release:
 
 Download and unzip the source code into the "python-source" directory then compile Python.
 
-NOTE: The following command assume that the Python version is 3.8.1.  Adjust the URL and version number on the commands as necessary.
+NOTE: The following command assumes that the Python version is 3.8.1.  Adjust the URL and version number on the commands as necessary.
 
     $ wget https://www.python.org/ftp/python/3.8.1/Python-3.8.1.tgz
     $ tar zxvf Python-3.8.1.tgz
@@ -113,7 +113,7 @@ Technically, most of this section is not absolutely necessary.  A simple Flask a
 
 NOTE: the web stack related configuration files are based on the "Raspberry Pi Full Stack Raspbian" course from Tech Explorations<sup>TM</sup>.  I **highly** recommend this course if you would like to understand all of the components of a web application.  Dr. Peter Dalmaris takes you step-by-step through the process of setting up a Raspberry Pi and building a full stack web application to monitor sensor data.
 
-Execute the following commands to install the needed web application stack components.  Notice that the virtutal environment created earlier is activated to ensure that all needed Python packages are installed into the Virtual Environment, not the system Python environment.
+Execute the following commands to install the needed web application stack components.  Notice that the virtual environment created earlier is activated to ensure that all needed Python packages are installed into the Virtual Environment, not the system Python environment.
 
     $ cd /var/www/sms/
     $ . bin/activate
@@ -325,7 +325,7 @@ Setup an ngrok session using the Twilio CLI.  Note the change in local port from
 
 Using the phone configured as `MY_PHONE_NUMBER` send a text message to your Twilio phone number.  You should receive a response text message like before.
 
-NOTE: a default route is also setup in the test receive_sms.py script which means that you can still access the local web server from another device on the LAN by navigating to the local IP address of the Reaspberry Pi from a web browser.
+NOTE: a default route is also setup in the test receive_sms.py script which means that you can still access the local web server from another device on the LAN by navigating to the local IP address of the Raspberry Pi from a web browser.
 
 ## Setup RAM Drive
 The RAM drive is used for communication between Python scripts without writing to the microSD card.
