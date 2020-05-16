@@ -16,7 +16,7 @@ NOTE: The "Raspbian Buster with desktop and recommended software" image released
 Download the latest version of Raspbian Desktop from RaspberryPi.org and flash onto a 16GB (or larger) micro SD card.  Etcher is recommended.  Win32 Disk Imager can also be used on Windows.
 ## Basic Raspbian Configuration
 References:
-- [Advanced IP Scanner] (https://www.advanced-ip-scanner.com/)
+- [Advanced IP Scanner](https://www.advanced-ip-scanner.com/)
 
 When booting the Raspberry Pi for the first time connect a keyboard, mouse and monitor before powering on the Raspberry Pi.
 
@@ -105,13 +105,12 @@ Do the following to setup a virtual Python3 environment.  Modify the Python vers
     $ sudo /usr/local/opt/python-3.8.1/bin/python3.8 -m venv .
 ## Setup Full Application Stack
 References:
-- [Tech Explorations<sup>TM</sup> Raspberry Pi Full Stack Raspbian](https://www.udemy.com/course/raspberry-pi-full-stack-raspbian/learn/lecture/9607938?start=15#overview)
-- [Tech Explorations website](https://techexplorations.com/)
+- [Tech Explorations<sup>TM</sup> Raspberry Pi Full Stack Raspbian](https://techexplorations.com/referal?mwr=49bc8a3f)
 - [FutureShocked Raspberry Pi Full Stack Raspbian](https://github.com/futureshocked/RaspberryPiFullStack_Raspbian) - original full stack code on GitHub
 
 Technically, most of this section is not absolutely necessary.  A simple Flask application is all that's needed.  But, if you want a robust, fully-functional web server running on the Raspberry Pi then follow the instructions below.
 
-NOTE: the web stack related configuration files are based on the "Raspberry Pi Full Stack Raspbian" course from Tech Explorations<sup>TM</sup>.  I **highly** recommend this course if you would like to understand all of the components of a web application.  Dr. Peter Dalmaris takes you step-by-step through the process of setting up a Raspberry Pi and building a full stack web application to monitor sensor data.
+NOTE: the web stack related configuration files are based on the "Raspberry Pi Full Stack Raspbian" course from Tech Explorations<sup>TM</sup>.  I **highly** recommend this course if you would like to understand all of the components of a web application.  Dr. Peter Dalmaris takes you step-by-step through the process of setting up a Raspberry Pi and building a full stack web application to monitor sensor data.  He also describes the process of debugging the application which is not covered here.
 
 Execute the following commands to install the needed web application stack components.  Notice that the virtual environment created earlier is activated to ensure that all needed Python packages are installed into the Virtual Environment, not the system Python environment.
 
