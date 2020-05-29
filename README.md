@@ -105,7 +105,7 @@ Do the following to setup a virtual Python3 environment.  Modify the Python vers
     $ sudo /usr/local/opt/python-3.8.1/bin/python3.8 -m venv .
 ## Setup Full Application Stack
 References:
-- [Tech Explorations<sup>TM</sup> Raspberry Pi Full Stack Raspbian](https://techexplorations.com/referal?mwr=49bc8a3f)
+- [Tech Explorations<sup>TM</sup> Raspberry Pi Full Stack Raspbian](https://techexplorations.com/so/rpifs/?mwr=49bc8a3f)
 - [FutureShocked Raspberry Pi Full Stack Raspbian](https://github.com/futureshocked/RaspberryPiFullStack_Raspbian) - original full stack code on GitHub
 
 Technically, most of this section is not absolutely necessary.  A simple Flask application is all that's needed.  But, if you want a robust, fully-functional web server running on the Raspberry Pi then follow the instructions below.
